@@ -1,0 +1,5 @@
+theano==0.6
+lasagne==0.1
+numpy
+scipy
+
