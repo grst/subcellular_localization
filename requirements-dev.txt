@@ -1,4 +1,4 @@
-theano==0.6
+theano==0.8
 lasagne==0.1
 numpy
 scipy
