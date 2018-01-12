@@ -1,5 +1,16 @@
 # PREDICTION OF PROTEIN SUBCELLULAR LOCALIZATION
 
+## Howto run
+* Setup a "Deep Learning Virtual Machine" on Azure. Technically, all instances with GPU should work fine. I used a NC6 instance with a K80 nvidia gpu. 
+* `sudo apt-get install python-virtualenv`
+* clone this repository
+* run a command from the Makefile, which will setup a python virtualenvirtionment. E.g. run `make rungpu` to run the full training cycle on GPU. 
+
+------------------------------------------------
+
+# Original README
+
+
 ## Synopsis
 Convolutional Bidirectional LSTM with attention mechanism for predicting protein subcellular localization. The model was trained using the  MultiLoc dataset, which counts with 5959 proteins. 
 
