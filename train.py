@@ -10,6 +10,7 @@ from metrics_mc import *
 from model import neural_network
 from confusionmatrix import ConfusionMatrix
 from utils import iterate_minibatches
+import cPickle as pickle
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--trainset',
@@ -149,6 +150,9 @@ for i in range(1, 5):
         cf_val = confusion_valid.ret_mat()
 
         f_val_acc = val_accuracy
+
+        pickle.dump(train_fn, open("./train_fn.pickle", 'wb'),
+                    protocol=pickle.HIGHEST_PROTOCOL)
 
         # Full pass test set if validation accuracy is higher
         # if f_val_acc >= best_val_acc:
