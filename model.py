@@ -133,7 +133,7 @@ def neural_network(batch_size, n_hid, n_feat, n_class, lr, drop_per, drop_hid,
     # Softmax output layer
     l_out = lasagne.layers.DenseLayer(
         lasagne.layers.dropout(l_dense, p=drop_hid), num_units=n_class,
-        name="Softmax", W=w_inits, nonlinearity=lasagne.nonlinearities.softmax)
+        name="Softmax", W=w_inits, nonlinearity=lasagne.nonlinearities.linear)
 
     # Get output training
     prediction = lasagne.layers.get_output(l_out, inputs={l_in: input_var,
