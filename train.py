@@ -153,32 +153,29 @@ for i in range(1, 5):
 
         f_val_acc = val_accuracy
 
-        pickle.dump(val_fn, open("./val_fn.pickle", 'wb'),
-                    protocol=pickle.HIGHEST_PROTOCOL)
-
         # Full pass test set if validation accuracy is higher
-        # if f_val_acc >= best_val_acc:
-        #
-        #     test_batches = 0
-        #     # Matrices to store all output information
-        #     test_alpha = np.array([], dtype=np.float32).reshape(0, seq_len)
-        #     test_context = np.array([], dtype=np.float32).reshape(0, n_hid * 2)
-        #     test_pred = np.array([], dtype=np.float32).reshape(0, n_class)
-        #
-        #     for batch in iterate_minibatches(X_test, y_test, mask_test,
-        #                                      batch_size, shuffle=False,
-        #                                      sort_len=False):
-        #         inputs, targets, in_masks = batch
-        #         err, net_out, alpha, context = val_fn(inputs, targets,
-        #                                               in_masks)
-        #
-        #         test_batches += 1
-        #         last_alpha = alpha[:, -1:, :].reshape((batch_size, seq_len))
-        #         test_alpha = np.concatenate((test_alpha, last_alpha), axis=0)
-        #         test_context = np.concatenate((test_context, context), axis=0)
-        #         test_pred = np.concatenate((test_pred, net_out), axis=0)
-        #
-        #     best_val_acc = f_val_acc
+        if f_val_acc >= best_val_acc:
+
+            test_batches = 0
+            # Matrices to store all output information
+            test_alpha = np.array([], dtype=np.float32).reshape(0, seq_len)
+            test_context = np.array([], dtype=np.float32).reshape(0, n_hid * 2)
+            test_pred = np.array([], dtype=np.float32).reshape(0, n_class)
+
+            for batch in iterate_minibatches(X_test, y_test, mask_test,
+                                             batch_size, shuffle=False,
+                                             sort_len=False):
+                inputs, targets, in_masks = batch
+                err, net_out, alpha, context = val_fn(inputs, targets,
+                                                      in_masks)
+
+                test_batches += 1
+                last_alpha = alpha[:, -1:, :].reshape((batch_size, seq_len))
+                test_alpha = np.concatenate((test_alpha, last_alpha), axis=0)
+                test_context = np.concatenate((test_context, context), axis=0)
+                test_pred = np.concatenate((test_pred, net_out), axis=0)
+
+            best_val_acc = f_val_acc
 
         eps += [epoch]
 
@@ -196,9 +193,12 @@ for i in range(1, 5):
         print("  validation IC:\t\t{:.2f}".format(IC(cf_val)))
 
     # Output matrices test set are summed at the end of each training
-    # complete_test += test_pred[:X_test.shape[0]]
-    # complete_context += test_context[:X_test.shape[0]]
-    # complete_alpha += test_alpha[:X_test.shape[0]]
+    complete_test += test_pred[:X_test.shape[0]]
+    complete_context += test_context[:X_test.shape[0]]
+    complete_alpha += test_alpha[:X_test.shape[0]]
+
+    theano.misc.pkl_utils.dump(val_fn, open("./models/fold_{}_val_fn.robust.pickle".format(i)))
+    pickle.dump(val_fn, open("./models/fold_{}_val_fn.pickle".format(i)))
 
 # The test output from the 4 trainings is averaged
 test_softmax = complete_test / 4.0
