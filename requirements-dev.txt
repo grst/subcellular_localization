@@ -2,4 +2,7 @@ theano==0.8.2
 lasagne==0.1
 numpy
 scipy
-
+ipykernel
+numpy
+matplotlib
+scipy
