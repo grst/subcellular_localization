@@ -642,7 +642,6 @@ class LSTMAttentionDecodeFeedbackLayer(MergeLayer):
         # a_out - (n_decodesteps, bs, seqlen)
         # hid_out -   (n_decode_steps, bs, num_units)
 
-
         # mask:  (BS, encode_seqlen
         # a_out; (n_decodesteps, BS, encode_seqlen)
         cell_out = cell_out.dimshuffle(1, 0, 2)
