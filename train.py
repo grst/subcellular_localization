@@ -11,6 +11,8 @@ from model import neural_network
 from confusionmatrix import ConfusionMatrix
 from utils import iterate_minibatches
 import cPickle as pickle
+import sys
+sys.setrecursionlimit(int(1e6))
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--trainset',
@@ -151,7 +153,7 @@ for i in range(1, 5):
 
         f_val_acc = val_accuracy
 
-        pickle.dump(train_fn, open("./train_fn.pickle", 'wb'),
+        pickle.dump(val_fn, open("./val_fn.pickle", 'wb'),
                     protocol=pickle.HIGHEST_PROTOCOL)
 
         # Full pass test set if validation accuracy is higher
