@@ -12,6 +12,11 @@ clean-venv:
 run: | python
 	$(PYTHON) train.py -i ./data/train.npz -t ./data/test.npz
 
+
+rundev: | python
+	$(PYTHON) train.py -i ./data/train.npz -t ./data/test.npz -e 3 -lr 0.01 -bs 64 -hn 128 -se 42
+
+
 rungpu: | python
 	THEANO_FLAGS=device=gpu0,dnn.conv.algo_fwd=time_once,dnn.conv.algo_bwd_filter=time_once,dnn.conv.algo_bwd_data=time_once,warn_float64=warn $(PYTHON) train.py -i ./data/train.npz -t ./data/test.npz
 
