@@ -5,6 +5,7 @@ PYTHON=$(VENV)/python
 help:
 
 clean: clean-venv
+	rm -fv *.pyc
 
 clean-venv:
 	rm -rf venv/

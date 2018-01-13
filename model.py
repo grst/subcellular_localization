@@ -133,7 +133,15 @@ def neural_network(batch_size, n_hid, n_feat, n_class, lr, drop_per, drop_hid,
     # Softmax output layer
     l_out = lasagne.layers.DenseLayer(
         lasagne.layers.dropout(l_dense, p=drop_hid), num_units=n_class,
-        name="Softmax", W=w_inits, nonlinearity=lasagne.nonlinearities.linear)
+        name="Softmax", W=w_inits, nonlinearity=lasagne.nonlinearities.sigmoid)
+
+    l_out_sigmoid = lasagne.layers.DenseLayer(
+        lasagne.layers.dropout(l_dense, p=drop_hid), num_units=n_class,
+        name="Sigmoid", W=w_inits, nonlinearity=lasagne.nonlinearities.sigmoid)
+
+    l_out_identity = lasagne.layers.DenseLayer(
+        lasagne.layers.dropout(l_dense, p=drop_hid), num_units=n_class,
+        name="Raw", W=w_inits, nonlinearity=lasagne.nonlinearities.identity)
 
     # Get output training
     prediction = lasagne.layers.get_output(l_out, inputs={l_in: input_var,
@@ -141,7 +149,7 @@ def neural_network(batch_size, n_hid, n_feat, n_class, lr, drop_per, drop_hid,
                                            deterministic=False)
 
     # Loss function
-    t_loss = T.nnet.categorical_crossentropy(prediction, target_var)
+    t_loss = T.nnet.categorical_crossentropy(prediction/T.sum(prediction), target_var)
     loss = T.mean(t_loss)
 
     # Parameters
@@ -153,8 +161,8 @@ def neural_network(batch_size, n_hid, n_feat, n_class, lr, drop_per, drop_hid,
     updates = lasagne.updates.adam(all_grads, params, learning_rate=lr)
 
     # Get output validation
-    test_prediction, context_vec = lasagne.layers.get_output(
-        [l_out, l_last_hid], inputs={l_in: input_var, l_mask: mask_var},
+    test_prediction, context_vec, test_prediction_sigmoid, test_prediction_identity  = lasagne.layers.get_output(
+        [l_out, l_last_hid, l_out_sigmoid, l_out_identity], inputs={l_in: input_var, l_mask: mask_var},
         deterministic=True)
 
     # Loss function
@@ -167,5 +175,5 @@ def neural_network(batch_size, n_hid, n_feat, n_class, lr, drop_per, drop_hid,
                                [loss, prediction], updates=updates)
     val_fn = theano.function([input_var, target_var, mask_var],
                              [test_loss, test_prediction, l_dec.alpha,
-                              context_vec])
+                              context_vec, test_prediction_sigmoid, test_prediction_identity])
     return train_fn, val_fn, l_out

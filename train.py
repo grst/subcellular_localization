@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import theano
 import theano.tensor as T
+import theano.misc.pkl_utils
 import time
 import lasagne
 import argparse
@@ -84,7 +85,7 @@ partition = train_data['partition']
 n_feat = np.shape(X_test)[2]
 
 # Training
-for i in range(1, 5):
+for i in range(1, 2):
     # Network compilation
     print("Compilation model {}\n".format(i))
     train_fn, val_fn, network_out = neural_network(batch_size, n_hid, n_feat,
@@ -137,14 +138,21 @@ for i in range(1, 5):
         confusion_valid = ConfusionMatrix(n_class)
 
         # Generate minibatches and train on each one of them
-        for batch in iterate_minibatches(X_val, y_val, mask_val, batch_size):
+        for k, batch in enumerate(iterate_minibatches(X_val, y_val, mask_val, batch_size)):
             inputs, targets, in_masks = batch
-            err, predict_val, alpha, context = val_fn(inputs, targets,
+            err, predict_val, alpha, context, pred_sigmoid, pred_id = val_fn(inputs, targets,
                                                       in_masks)
             val_err += err
             val_batches += 1
             preds = np.argmax(predict_val, axis=-1)
-            print(predict)
+            print("### BATCH {} ".format(k))
+            print("SOFTMAX")
+            print(predict_val)
+            print("SIGMOID")
+            print(pred_sigmoid)
+            print("IDENTITY")
+            print(pred_id)
+            print()
             confusion_valid.batch_add(targets, preds)
 
         val_loss = val_err / val_batches
@@ -166,7 +174,7 @@ for i in range(1, 5):
                                              batch_size, shuffle=False,
                                              sort_len=False):
                 inputs, targets, in_masks = batch
-                err, net_out, alpha, context = val_fn(inputs, targets,
+                err, net_out, alpha, context, pred_sigmoid, pred_id = val_fn(inputs, targets,
                                                       in_masks)
 
                 test_batches += 1
@@ -197,8 +205,8 @@ for i in range(1, 5):
     complete_context += test_context[:X_test.shape[0]]
     complete_alpha += test_alpha[:X_test.shape[0]]
 
-    theano.misc.pkl_utils.dump(val_fn, open("./models/fold_{}_val_fn.robust.pickle".format(i)))
-    pickle.dump(val_fn, open("./models/fold_{}_val_fn.pickle".format(i)))
+    theano.misc.pkl_utils.dump(val_fn, open("./models/fold_{}_val_fn.robust.pickle".format(i), 'wb'))
+    pickle.dump(val_fn, open("./models/fold_{}_val_fn.pickle".format(i), 'wb'))
 
 # The test output from the 4 trainings is averaged
 test_softmax = complete_test / 4.0
