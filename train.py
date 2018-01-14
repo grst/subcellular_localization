@@ -46,7 +46,7 @@ if args.trainset == None or args.testset == None:
     sys.exit(1)
 
 # Input options
-n_class = 10
+n_class = 12
 batch_size = int(args.batch_size)
 seq_len = 1000
 n_hid = int(args.n_hid)
@@ -80,12 +80,13 @@ X_train = train_data['X_train']
 y_train = train_data['y_train']
 mask_train = train_data['mask_train']
 partition = train_data['partition']
+id_train = train_data['identifiers']
 
 # Number of features
 n_feat = np.shape(X_test)[2]
 
 # Training
-for i in range(1, 2):
+for i in range(1,5):
     # Network compilation
     print("Compilation model {}\n".format(i))
     train_fn, val_fn, network_out = neural_network(batch_size, n_hid, n_feat,
@@ -101,6 +102,10 @@ for i in range(1, 2):
     y_val = y_train[val_index].astype(np.int32)
     mask_tr = mask_train[train_index].astype(np.float32)
     mask_val = mask_train[val_index].astype(np.float32)
+    id_tr = id_train[train_index]
+    id_val = id_train[val_index]
+
+    np.save("./results/fold_{}_test_ids.npy".format(i), id_val)
 
     print("Validation shape: {}".format(X_val.shape))
     print("Training shape: {}".format(X_tr.shape))
@@ -118,6 +123,9 @@ for i in range(1, 2):
         train_batches = 0
         confusion_train = ConfusionMatrix(n_class)
 
+        ctr=0
+        epoch_predictions = np.zeros(y_val.shape)
+
         # Generate minibatches and train on each one of them
         for batch in iterate_minibatches(X_tr, y_tr, mask_tr, batch_size,
                                          shuffle=True):
@@ -126,6 +134,10 @@ for i in range(1, 2):
             train_err += tr_err
             train_batches += 1
             preds = np.argmax(predict, axis=-1)
+            # take the first protein for multiclass predictions
+            # this is far from ideal, but we can still use the confusion matrix w/o changing everything
+            # multiclass evaluation is done separately.
+            targets = np.argmax(targets, axis=1)
             confusion_train.batch_add(targets, preds)
 
         train_loss = train_err / train_batches
@@ -137,23 +149,26 @@ for i in range(1, 2):
         val_batches = 0
         confusion_valid = ConfusionMatrix(n_class)
 
-        # Generate minibatches and train on each one of them
+        # Generate minibatches and test on each one of them
         for k, batch in enumerate(iterate_minibatches(X_val, y_val, mask_val, batch_size)):
             inputs, targets, in_masks = batch
-            err, predict_val, alpha, context, pred_sigmoid, pred_id = val_fn(inputs, targets,
-                                                      in_masks)
+            err, predict_val, alpha, context = val_fn(inputs, targets, in_masks)
             val_err += err
             val_batches += 1
             preds = np.argmax(predict_val, axis=-1)
             print("### BATCH {} ".format(k))
-            print("SOFTMAX")
+            print(predict_val.shape)
             print(predict_val)
-            print("SIGMOID")
-            print(pred_sigmoid)
-            print("IDENTITY")
-            print(pred_id)
-            print()
+            print("")
+            targets = np.argmax(targets, axis=1)
             confusion_valid.batch_add(targets, preds)
+
+            # store current predictions
+            print(predict_val.size)
+            epoch_predictions[ctr:ctr+predict_val.shape[0]] = predict_val[:epoch_predictions.shape[0]-ctr]
+            ctr += predict_val.shape[0]
+
+        np.save("./results/fold_{}_epoch_{}_prediction.npy".format(i, epoch), epoch_predictions)
 
         val_loss = val_err / val_batches
         val_accuracy = confusion_valid.accuracy()
@@ -161,29 +176,29 @@ for i in range(1, 2):
 
         f_val_acc = val_accuracy
 
-        # Full pass test set if validation accuracy is higher
-        if f_val_acc >= best_val_acc:
+        # # Full pass test set if validation accuracy is higher
+        # if f_val_acc >= best_val_acc:
 
-            test_batches = 0
-            # Matrices to store all output information
-            test_alpha = np.array([], dtype=np.float32).reshape(0, seq_len)
-            test_context = np.array([], dtype=np.float32).reshape(0, n_hid * 2)
-            test_pred = np.array([], dtype=np.float32).reshape(0, n_class)
+        #     test_batches = 0
+        #     # Matrices to store all output information
+        #     test_alpha = np.array([], dtype=np.float32).reshape(0, seq_len)
+        #     test_context = np.array([], dtype=np.float32).reshape(0, n_hid * 2)
+        #     test_pred = np.array([], dtype=np.float32).reshape(0, n_class)
 
-            for batch in iterate_minibatches(X_test, y_test, mask_test,
-                                             batch_size, shuffle=False,
-                                             sort_len=False):
-                inputs, targets, in_masks = batch
-                err, net_out, alpha, context, pred_sigmoid, pred_id = val_fn(inputs, targets,
-                                                      in_masks)
+        #     for batch in iterate_minibatches(X_test, y_test, mask_test,
+        #                                      batch_size, shuffle=False,
+        #                                      sort_len=False):
+        #         inputs, targets, in_masks = batch
+        #         err, net_out, alpha, context, pred_sigmoid, pred_id = val_fn(inputs, targets,
+        #                                               in_masks)
 
-                test_batches += 1
-                last_alpha = alpha[:, -1:, :].reshape((batch_size, seq_len))
-                test_alpha = np.concatenate((test_alpha, last_alpha), axis=0)
-                test_context = np.concatenate((test_context, context), axis=0)
-                test_pred = np.concatenate((test_pred, net_out), axis=0)
+        #         test_batches += 1
+        #         last_alpha = alpha[:, -1:, :].reshape((batch_size, seq_len))
+        #         test_alpha = np.concatenate((test_alpha, last_alpha), axis=0)
+        #         test_context = np.concatenate((test_context, context), axis=0)
+        #         test_pred = np.concatenate((test_pred, net_out), axis=0)
 
-            best_val_acc = f_val_acc
+        #     best_val_acc = f_val_acc
 
         eps += [epoch]
 
@@ -214,14 +229,14 @@ context_vectors = complete_context / 4.0
 alpha_weight = complete_alpha / 4.0
 
 # Final test accuracy and confusion matrix
-confusion_test = ConfusionMatrix(n_class)
-loc_pred = np.argmax(test_softmax, axis=-1)
-confusion_test.batch_add(y_test, loc_pred)
-test_accuracy = confusion_test.accuracy()
-cf_test = confusion_test.ret_mat()
+# confusion_test = ConfusionMatrix(n_class)
+# loc_pred = np.argmax(test_softmax, axis=-1)
+# confusion_test.batch_add(y_test, loc_pred)
+# test_accuracy = confusion_test.accuracy()
+# cf_test = confusion_test.ret_mat()
 
-print "FINAL TEST RESULTS"
-print confusion_test
-print("  test accuracy:\t\t{:.2f} %".format(test_accuracy * 100))
-print("  test Gorodkin:\t\t{:.2f}".format(gorodkin(cf_test)))
-print("  test IC:\t\t{:.2f}".format(IC(cf_test)))
+# print "FINAL TEST RESULTS"
+# print confusion_test
+# print("  test accuracy:\t\t{:.2f} %".format(test_accuracy * 100))
+# print("  test Gorodkin:\t\t{:.2f}".format(gorodkin(cf_test)))
+# print("  test IC:\t\t{:.2f}".format(IC(cf_test)))
