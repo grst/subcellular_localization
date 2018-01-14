@@ -3,6 +3,8 @@ lasagne==0.1
 numpy
 scipy
 ipykernel
-numpy
 matplotlib
 scipy
+pandas
+seaborn
+plotnine
