@@ -46,7 +46,7 @@ if args.trainset == None or args.testset == None:
     sys.exit(1)
 
 # Input options
-n_class = 12
+n_class = 10
 batch_size = int(args.batch_size)
 seq_len = 1000
 n_hid = int(args.n_hid)
@@ -80,10 +80,13 @@ X_train = train_data['X_train']
 y_train = train_data['y_train']
 mask_train = train_data['mask_train']
 partition = train_data['partition']
-id_train = train_data['identifiers']
+# id_train = train_data['identifiers']
 
 # Number of features
 n_feat = np.shape(X_test)[2]
+
+print(y_train)
+print(y_test)
 
 # Training
 for i in range(1,5):
@@ -102,10 +105,10 @@ for i in range(1,5):
     y_val = y_train[val_index].astype(np.int32)
     mask_tr = mask_train[train_index].astype(np.float32)
     mask_val = mask_train[val_index].astype(np.float32)
-    id_tr = id_train[train_index]
-    id_val = id_train[val_index]
+    # id_tr = id_train[train_index]
+    # id_val = id_train[val_index]
 
-    np.save("./results/fold_{}_test_ids.npy".format(i), id_val)
+    # np.save("./results/fold_{}_test_ids.npy".format(i), id_val)
 
     print("Validation shape: {}".format(X_val.shape))
     print("Training shape: {}".format(X_tr.shape))
@@ -137,7 +140,7 @@ for i in range(1,5):
             # take the first protein for multiclass predictions
             # this is far from ideal, but we can still use the confusion matrix w/o changing everything
             # multiclass evaluation is done separately.
-            targets = np.argmax(targets, axis=1)
+            targets = np.argmax(targets, axis=-1)
             confusion_train.batch_add(targets, preds)
 
         train_loss = train_err / train_batches
@@ -160,7 +163,7 @@ for i in range(1,5):
             print(predict_val.shape)
             print(predict_val)
             print("")
-            targets = np.argmax(targets, axis=1)
+            targets = np.argmax(targets, axis=-1)
             confusion_valid.batch_add(targets, preds)
 
             # store current predictions

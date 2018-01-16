@@ -1,8 +1,10 @@
 VENV=venv/bin
 PIP=$(VENV)/pip
 PYTHON=$(VENV)/python
-TRAIN=../deeploc_multi/results/cdhit_train.npz
-TEST=../deeploc_multi/results/cdhit_test.npz
+TRAIN=../deeploc_multi/results/deeploc_train_onehot.npz
+TEST=../deeploc_multi/results/deeploc_test_onehot.npz
+# TRAIN=./data/train.npz
+# TEST=./data/test.npz
 
 help:
 

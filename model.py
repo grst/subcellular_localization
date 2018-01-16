@@ -3,7 +3,7 @@ import theano
 import theano.tensor as T
 import lasagne
 from utils import LSTMAttentionDecodeFeedbackLayer, DropoutSeqPosLayer
-
+np.set_printoptions(threshold=np.inf)
 
 def neural_network(batch_size, n_hid, n_feat, n_class, lr, drop_per, drop_hid,
                    n_filt):
@@ -140,9 +140,19 @@ def neural_network(batch_size, n_hid, n_feat, n_class, lr, drop_per, drop_hid,
                                                           l_mask: mask_var},
                                            deterministic=False)
 
-    # Loss function
-    t_loss = T.nnet.categorical_crossentropy(prediction, target_var)
-    loss = T.mean(t_loss)
+    # Loss functiongg
+    target_var_printed = theano.printing.Print("target_var")(target_var)
+    prediction_printed = theano.printing.Print("prediction")(prediction)
+    # t_loss = T.nnet.categorical_crossentropy(prediction_printed, target_var_printed)
+    # t_loss_printed = theano.printing.Print("t_loss")(t_loss)
+    # loss = T.mean(t_loss_printed)
+
+    one = np.float32(1.)
+    pred_clipped = T.clip(prediction_printed, 0.0001, 0.9999) # don't piss off the log
+    target_clipped = T.clip(target_var_printed, 0.0001, 0.9999)
+    cost = -T.sum(target_clipped * T.log(pred_clipped) + (one - target_clipped) * T.log(one - pred_clipped), axis=1)
+    cost_printed = theano.printing.Print("loss")(cost)
+    loss = T.mean(cost_printed, axis=0)
 
     # Parameters
     params = lasagne.layers.get_all_params([l_out], trainable=True)
