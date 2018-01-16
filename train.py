@@ -46,7 +46,7 @@ if args.trainset == None or args.testset == None:
     sys.exit(1)
 
 # Input options
-n_class = 10
+n_class = 12
 batch_size = int(args.batch_size)
 seq_len = 1000
 n_hid = int(args.n_hid)
